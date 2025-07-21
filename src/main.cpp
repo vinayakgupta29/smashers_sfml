@@ -42,13 +42,13 @@ int main() {
 
   // Initialize game state
   GameState currentState = GameState::WAITING;
-  Enemy enm("/home/zoro/Downloads/skull-sprite.png", {0, 0}, {22, 27}, 2);
+  Enemy enm("assets/sprites/skull-sprite.png", {0, 0}, {22, 27}, 2);
 
-  TestingScreen testingScreen("/home/zoro/Downloads/skull-sprite.png");
+  TestingScreen testingScreen("assets/sprites/skull-sprite.png");
 
   // Load resources
   sf::Font font;
-  string path = "/home/zoro/.local/share/fonts/fonts/Diphylleia-Regular.ttf";
+  string path = "assets/fonts/Diphylleia-Regular.ttf";
   if (!font.openFromFile(path)) {
     cerr << "Failed to load Font from : " << path << "\n";
     exit(EXIT_FAILURE);
