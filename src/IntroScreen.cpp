@@ -1,6 +1,7 @@
 #include "include/IntroScreen.hpp"
 #include "include/RoundedRectangle.h"
 #include "include/models.h"
+#include "include/utils.h"
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/Text.hpp>
@@ -23,7 +24,7 @@ void IntroScreen::draw(sf::RenderWindow &window, sf::Font &font) {
 
   // Title setup
   title.setFont(font);
-  title.setString("Brick Breaker");
+  title.setString("Smashers");
   title.setCharacterSize(60);
   title.setFillColor(sf::Color::Yellow);
   title.setStyle(sf::Text::Bold);
@@ -34,10 +35,10 @@ void IntroScreen::draw(sf::RenderWindow &window, sf::Font &font) {
 
   // Instructions setup
   instructions.setFont(font);
-  instructions.setString("Click the green circle before it moves!\n"
+  instructions.setString("Click the skull enemies before it moves!\n"
                          "Lose a life if you miss.\n"
                          "Score increases with each hit.\n"
-                         "Game speeds up every 100 points.");
+                         "Game speeds up every 100 points.\t Esc to exit...");
   instructions.setCharacterSize(22);
   instructions.setFillColor(sf::Color::White);
   sf::FloatRect instrBounds = instructions.getLocalBounds();
@@ -48,7 +49,7 @@ void IntroScreen::draw(sf::RenderWindow &window, sf::Font &font) {
   // Play button setup
   playButton.setSize(buttonSize);
   playButton.setRadius(5.0f);
-  playButton.setFillColor(sf::Color(100, 200, 100));
+  playButton.setFillColor(colorFromHex("#FFB400"));
   playButton.setOutlineColor(sf::Color::Black);
   playButton.setOutlineThickness(3.f);
   playButton.setPosition({windowWidth / 2.f - buttonSize.x / 2.f, currentY});

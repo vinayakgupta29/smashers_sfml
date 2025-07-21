@@ -6,14 +6,14 @@
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
 
-class IntroScreen  {
+class IntroScreen {
 public:
   IntroScreen(float windowWidth, float windowHeight);
-  void update(GameState &) ;
-  void draw(sf::RenderWindow &) ;
+  void update(GameState &);
+  void draw(sf::RenderWindow &);
   void draw(sf::RenderWindow &window, sf::Font &font);
   void handleEvent(const sf::Event &event, sf::RenderWindow &window,
-                   GameState &gameState) ;
+                   GameState &gameState);
 
 private:
   RoundedRectangle playButton;

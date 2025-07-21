@@ -1,9 +1,9 @@
 #pragma once
 
-#include "sounds.h"
 #include "enemy.h"
 #include "models.h"
 #include "screen.h"
+#include "sounds.h"
 #include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
@@ -14,13 +14,14 @@
 
 class GameScreen {
 private:
-
   uint windowWidth, windowHeight;
   Enemy enemy;
   sf::Clock enemyClock;
-  void handleMouseButtonPressed(const sf::Event::MouseButtonPressed &mouseButton, sf::RenderWindow &window, GameState &gameState);
-  void handleKeyPressed(const sf::Event::KeyPressed &keyPressed, GameState &gameState);
-
+  void
+  handleMouseButtonPressed(const sf::Event::MouseButtonPressed &mouseButton,
+                           sf::RenderWindow &window, GameState &gameState);
+  void handleKeyPressed(const sf::Event::KeyPressed &keyPressed,
+                        GameState &gameState);
 
 public:
   uint score;
@@ -42,7 +43,7 @@ public:
   void handleEvent(const sf::Event &event, sf::RenderWindow &window,
                    GameState &gameState);
 
-void draw(sf::RenderWindow &window, sf::Font &font,
+  void draw(sf::RenderWindow &window, sf::Font &font,
             sf::Texture &heartTexture);
   void reset();
 };

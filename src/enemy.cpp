@@ -63,5 +63,5 @@ void Enemy::setScale(float x, float y) { sprite.setScale({x, y}); }
 sf::Sprite Enemy::getSprite() { return sprite; }
 
 sf::FloatRect Enemy::getGlobalBounds() const {
-    return sprite.getGlobalBounds();
+  return sprite.getGlobalBounds();
 }

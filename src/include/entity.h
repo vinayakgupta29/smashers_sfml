@@ -1,7 +1,7 @@
 #pragma once
 #include <SFML/Graphics/Rect.hpp>
-class Entity{
+class Entity {
 public:
-    virtual ~Entity() = default;
-    virtual sf::FloatRect getGlobalBounds() const = 0;
+  virtual ~Entity() = default;
+  virtual sf::FloatRect getGlobalBounds() const = 0;
 };

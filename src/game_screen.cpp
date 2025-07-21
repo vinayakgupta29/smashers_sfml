@@ -1,8 +1,8 @@
 
-#include "include/sounds.h"
 #include "include/GameScreen.h"
 #include "include/enemy.h"
 #include "include/models.h"
+#include "include/sounds.h"
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
@@ -22,10 +22,9 @@ GameScreen::GameScreen(uint width, uint height, Enemy &enm,
 void GameScreen::handleEvent(const sf::Event &event, sf::RenderWindow &window,
                              GameState &gameState) {
 
-                              
   if (const auto *mouseButtonPressed =
           event.getIf<sf::Event::MouseButtonPressed>()) {
-            handleMouseButtonPressed(*mouseButtonPressed, window, gameState);
+    handleMouseButtonPressed(*mouseButtonPressed, window, gameState);
   }
   if (const auto *keyPressed = event.getIf<sf::Event::KeyPressed>()) {
     if (keyPressed->code == sf::Keyboard::Key::Escape) {
@@ -34,45 +33,48 @@ void GameScreen::handleEvent(const sf::Event &event, sf::RenderWindow &window,
   }
 }
 
-void GameScreen::handleMouseButtonPressed(const sf::Event::MouseButtonPressed &mouseButton, sf::RenderWindow &window, GameState &gameState) {
-    if (mouseButton.button == sf::Mouse::Button::Left) {
-        sf::Vector2f click_pos = window.mapPixelToCoords(mouseButton.position);
-        if (isClickedOn(enemy, click_pos)) {
-            score++;
-            auto it = sounds.find(SoundId::ATTACK);
-            if (it != sounds.end()) it->second.play();
-            isDotClicked = true;
-            consecutiveMisses = 0;
+void GameScreen::handleMouseButtonPressed(
+    const sf::Event::MouseButtonPressed &mouseButton, sf::RenderWindow &window,
+    GameState &gameState) {
+  if (mouseButton.button == sf::Mouse::Button::Left) {
+    sf::Vector2f click_pos = window.mapPixelToCoords(mouseButton.position);
+    if (isClickedOn(enemy, click_pos)) {
+      score++;
+      auto it = sounds.find(SoundId::ATTACK);
+      if (it != sounds.end())
+        it->second.play();
+      isDotClicked = true;
+      consecutiveMisses = 0;
 
-            // Spawn new dot (avoid title bar area)
-            float titleBarHeight = 80.f; // Approximate title bar height
-            sf::Vector2f pos(
-                {randomNum(0.f,
-                           static_cast<float>(windowWidth -
-                                              enemy.getGlobalBounds().size.x * 2)),
-                 randomNum(
-                     titleBarHeight,
+      // Spawn new dot (avoid title bar area)
+      float titleBarHeight = 80.f; // Approximate title bar height
+      sf::Vector2f pos(
+          {randomNum(0.f,
+                     static_cast<float>(windowWidth -
+                                        enemy.getGlobalBounds().size.x * 2)),
+           randomNum(titleBarHeight,
                      static_cast<float>(windowHeight -
                                         enemy.getGlobalBounds().size.y * 2))});
-            enemy.setPosition(pos.x, pos.y);
-            std::cout << "Score : " << score << "\n";
+      enemy.setPosition(pos.x, pos.y);
+      std::cout << "Score : " << score << "\n";
 
-            if (score % 100 == 0) {
-                interval = sf::milliseconds(
-                    static_cast<int>(interval.asMilliseconds() * 0.9));
-                std::cout << "Interval reduced to: " << interval.asMilliseconds()
-                          << " ms\n";
-            }
-            clock.restart(); // Reset the interval clock on click as well
-        }
+      if (score % 100 == 0) {
+        interval =
+            sf::milliseconds(static_cast<int>(interval.asMilliseconds() * 0.9));
+        std::cout << "Interval reduced to: " << interval.asMilliseconds()
+                  << " ms\n";
+      }
+      clock.restart(); // Reset the interval clock on click as well
     }
+  }
 }
 
-void GameScreen::handleKeyPressed(const sf::Event::KeyPressed &keyPressed, GameState &gameState) {
-    if (keyPressed.code == sf::Keyboard::Key::Escape) {
-        gameState = GameState::WAITING;
-        update(gameState);
-    }
+void GameScreen::handleKeyPressed(const sf::Event::KeyPressed &keyPressed,
+                                  GameState &gameState) {
+  if (keyPressed.code == sf::Keyboard::Key::Escape) {
+    gameState = GameState::WAITING;
+    update(gameState);
+  }
 }
 
 void GameScreen::update(GameState &gameState) {

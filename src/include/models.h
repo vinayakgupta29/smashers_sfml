@@ -11,4 +11,4 @@ enum class GameState {
 
 // Utility functions
 float randomNum(float min, float max);
-bool isClickedOn(const Entity& entity, sf::Vector2f &click_pos);
+bool isClickedOn(const Entity &entity, sf::Vector2f &click_pos);

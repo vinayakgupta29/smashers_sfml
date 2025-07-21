@@ -1,14 +1,16 @@
 
-#include "include/sounds.h"
 #include "include/GameOverScreen.h"
 #include "include/GameScreen.h"
 #include "include/IntroScreen.hpp"
 #include "include/enemy.h"
 #include "include/models.h"
+#include "include/pathResolution.h"
+#include "include/saveData.h"
+#include "include/sounds.h"
 #include "include/testing.h"
+#include <SFML/Audio.hpp> // Ensure all SFML audio features are included
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
-#include <SFML/Audio.hpp> // Ensure all SFML audio features are included
 #include <SFML/Graphics.hpp>
 #include <SFML/Graphics/Color.hpp>
 #include <SFML/Graphics/ConvexShape.hpp>
@@ -42,13 +44,13 @@ int main() {
 
   // Initialize game state
   GameState currentState = GameState::WAITING;
-  Enemy enm("assets/sprites/skull-sprite.png", {0, 0}, {22, 27}, 2);
+  Enemy enm(getAssetPath("sprites/skull-sprite.png"), {0, 0}, {22, 27}, 2);
 
-  TestingScreen testingScreen("assets/sprites/skull-sprite.png");
+  TestingScreen testingScreen(getAssetPath("sprites/skull-sprite.png"));
 
   // Load resources
   sf::Font font;
-  string path = "assets/fonts/Diphylleia-Regular.ttf";
+  string path = getAssetPath("fonts/Diphylleia-Regular.ttf");
   if (!font.openFromFile(path)) {
     cerr << "Failed to load Font from : " << path << "\n";
     exit(EXIT_FAILURE);
@@ -66,13 +68,15 @@ int main() {
   GameScreen gameScreen(windowWidth, windowHeight, enm, sounds);
   GameOverScreen gameOverScreen(0);
   sf::Texture heartTexture;
-  if (!heartTexture.loadFromFile("assets/sprites/heart.png")) {
+  if (!heartTexture.loadFromFile(getAssetPath("sprites/heart.png"))) {
     cout << "Error loading heart.png" << endl;
     exit(EXIT_FAILURE);
   }
 
   cout << windowHeight << "\t" << windowWidth << endl;
+  TOMLDataSaver saver;
 
+  GameState previousState = currentState;
 
   while (window.isOpen()) {
     while (const std::optional event = window.pollEvent()) {
@@ -98,25 +102,31 @@ int main() {
     }
 
     // --- Background music logic ---
-      auto bgIt = sounds.find(SoundId::BACKGROUND);
-      if (bgIt != sounds.end()) {
-        if ((currentState == GameState::WAITING || currentState == GameState::PLAYING)) {
-          if (bgIt->second.getStatus() != sf::Sound::Status::Playing) {
-            bgIt->second.play();
-          }
-        } else if (currentState == GameState::GAME_OVER) {
-          bgIt->second.stop();
-          auto it = sounds.find(SoundId::GAMELOOSE);
-      
-          if (it!=sounds.end() && it->second.getStatus()!=sf::Sound::Status::Playing) {
-          it->second.play();
-          }
+    auto bgIt = sounds.find(SoundId::BACKGROUND);
+    if (bgIt != sounds.end()) {
+      if ((currentState == GameState::WAITING ||
+           currentState == GameState::PLAYING)) {
+        if (bgIt->second.getStatus() != sf::Sound::Status::Playing) {
+          bgIt->second.play();
+        }
+      } else if (currentState == GameState::GAME_OVER) {
+        bgIt->second.stop();
+        auto it = sounds.find(SoundId::GAMELOOSE);
 
+        if (it != sounds.end() &&
+            it->second.getStatus() != sf::Sound::Status::Playing) {
+          it->second.play();
         }
       }
+    }
 
-    
     // --- End background music logic ---
+
+    if (currentState == GameState::GAME_OVER &&
+        previousState != GameState::GAME_OVER) {
+      saver.updateHighScore(gameOverScreen.finalScore);
+    }
+    previousState = currentState;
 
     // Update game logic based on current state
     switch (currentState) {
@@ -125,13 +135,13 @@ int main() {
     case GameState::PLAYING:
       gameScreen.update(currentState);
       break;
-    case GameState::GAME_OVER:
-    {  // Update game over screen if it just changed
-     
+    case GameState::GAME_OVER: { // Update game over screen if it just changed
+
       if (gameOverScreen.finalScore != gameScreen.score) {
         gameOverScreen.finalScore = gameScreen.score;
       }
-      break;}
+      break;
+    }
     case GameState::TESTING:
       break;
     }
@@ -145,9 +155,10 @@ int main() {
     case GameState::PLAYING:
       gameScreen.draw(window, font, heartTexture);
       break;
-    case GameState::GAME_OVER:
+    case GameState::GAME_OVER: {
       gameOverScreen.draw(window, font);
       break;
+    }
     case GameState::TESTING:
       testingScreen.draw(window, font);
       break;

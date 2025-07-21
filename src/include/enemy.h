@@ -6,10 +6,10 @@
 #include <SFML/Graphics/Rect.hpp>
 #include <SFML/Graphics/Sprite.hpp>
 #include <SFML/Graphics/Transformable.hpp>
+#include <SFML/System/Clock.hpp>
 #include <cstdint>   // For fixed-width integers (uint32_t)
 #include <stdexcept> // For runtime_error
 #include <string>
-#include <SFML/System/Clock.hpp>
 
 class Enemy : public Entity, public sf::Transformable {
 public:
