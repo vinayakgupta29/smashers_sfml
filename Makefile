@@ -3,7 +3,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Isrc
 
 # Output
-TARGET = bin/sfmlgame
+TARGET = bin/smashers
 
 # SFML libraries
 LDFLAGS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
