@@ -1,6 +1,6 @@
 #include "include/IntroScreen.hpp"
 #include "include/RoundedRectangle.h"
-#include "include/models.h"
+#include "include/gameStateManager.h"
 #include "include/utils.h"
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
@@ -73,8 +73,8 @@ void IntroScreen::draw(sf::RenderWindow &window, sf::Font &font) {
   window.draw(playText);
 }
 
-void IntroScreen::handleEvent(const sf::Event &event, sf::RenderWindow &window,
-                              GameState &gameState) {
+void IntroScreen::handleEvent(const sf::Event &event,
+                              sf::RenderWindow &window) {
   // If using std::variant for event, check for MouseButtonPressed
   if (const auto *mouseButtonPressed =
           event.getIf<sf::Event::MouseButtonPressed>()) {
@@ -82,7 +82,7 @@ void IntroScreen::handleEvent(const sf::Event &event, sf::RenderWindow &window,
       sf::Vector2f click_pos =
           window.mapPixelToCoords(mouseButtonPressed->position);
       if (playButton.getGlobalBounds().contains(click_pos)) {
-        gameState = GameState::PLAYING;
+        Game::setGameState(Game::GameState::PLAYING);
       }
     }
   }

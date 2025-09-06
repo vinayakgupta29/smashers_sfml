@@ -2,9 +2,11 @@
 #include "include/GameOverScreen.h"
 #include "include/GameScreen.h"
 #include "include/IntroScreen.hpp"
+#include "include/effects.h"
 #include "include/enemy.h"
-#include "include/models.h"
+#include "include/gameStateManager.h"
 #include "include/pathResolution.h"
+#include "include/player.h"
 #include "include/saveData.h"
 #include "include/sounds.h"
 #include "include/testing.h"
@@ -43,10 +45,10 @@ int main() {
                           "SFML Dot Game!");
 
   // Initialize game state
-  GameState currentState = GameState::WAITING;
   Enemy enm(getAssetPath("sprites/skull-sprite.png"), {0, 0}, {22, 27}, 2);
 
-  TestingScreen testingScreen(getAssetPath("sprites/skull-sprite.png"));
+  TestingScreen testingScreen(
+      "/home/zoro/Downloads/explosion.png"); // getAssetPath("sprites/skull-sprite.png"));
 
   // Load resources
   sf::Font font;
@@ -57,15 +59,16 @@ int main() {
   }
 
   loadSound();
-
+  smashers::Effects effect(getAssetPath("sprites/8-bit-explosion.png"), {0, 0},
+                           {32, 32}, 6);
   // Set background music to loop
   auto bgIt = sounds.find(SoundId::BACKGROUND);
   if (bgIt != sounds.end()) {
     bgIt->second.setLooping(true);
   }
-
+  TOMLDataSaver saver;
   IntroScreen introScreen(windowWidth, windowHeight);
-  GameScreen gameScreen(windowWidth, windowHeight, enm, sounds);
+  GameScreen gameScreen(windowWidth, windowHeight, enm, effect, sounds, saver);
   GameOverScreen gameOverScreen(0);
   sf::Texture heartTexture;
   if (!heartTexture.loadFromFile(getAssetPath("sprites/heart.png"))) {
@@ -73,30 +76,30 @@ int main() {
     exit(EXIT_FAILURE);
   }
 
+  // Game::setGameState(Game::GameState::TESTING);
   cout << windowHeight << "\t" << windowWidth << endl;
-  TOMLDataSaver saver;
 
-  GameState previousState = currentState;
-
+  smashers::Player player;
+  cout << &player << "\n";
   while (window.isOpen()) {
     while (const std::optional event = window.pollEvent()) {
       if (event->is<sf::Event::Closed>()) {
         window.close();
       }
       // Handle events based on current state
-      switch (currentState) {
-      case GameState::WAITING:
-        introScreen.handleEvent(*event, window, currentState);
+      switch (Game::getGameState()) {
+      case Game::GameState::WAITING:
+        introScreen.handleEvent(*event, window);
         break;
-      case GameState::PLAYING:
-        gameScreen.handleEvent(*event, window, currentState);
+      case Game::GameState::PLAYING:
+        gameScreen.handleEvent(*event, window, player);
         break;
-      case GameState::GAME_OVER:
-        gameOverScreen.handleEvent(*event, currentState, gameScreen);
+      case Game::GameState::GAME_OVER:
+        gameOverScreen.handleEvent(*event, player);
         break;
 
-      case GameState::TESTING:
-        testingScreen.handleEvent(*event, window, currentState);
+      case Game::GameState::TESTING:
+        testingScreen.handleEvent(*event, window);
         break;
       }
     }
@@ -104,12 +107,13 @@ int main() {
     // --- Background music logic ---
     auto bgIt = sounds.find(SoundId::BACKGROUND);
     if (bgIt != sounds.end()) {
-      if ((currentState == GameState::WAITING ||
-           currentState == GameState::PLAYING)) {
+      Game::GameState currentState = Game::getGameState();
+      if ((currentState == Game::GameState::WAITING ||
+           currentState == Game::GameState::PLAYING)) {
         if (bgIt->second.getStatus() != sf::Sound::Status::Playing) {
           bgIt->second.play();
         }
-      } else if (currentState == GameState::GAME_OVER) {
+      } else if (currentState == Game::GameState::GAME_OVER) {
         bgIt->second.stop();
         auto it = sounds.find(SoundId::GAMELOOSE);
 
@@ -122,44 +126,46 @@ int main() {
 
     // --- End background music logic ---
 
-    if (currentState == GameState::GAME_OVER &&
-        previousState != GameState::GAME_OVER) {
+    if (Game::isStateUpdated() &&
+        Game::getGameState() == Game::GameState::GAME_OVER) {
       saver.updateHighScore(gameOverScreen.finalScore);
     }
-    previousState = currentState;
 
     // Update game logic based on current state
-    switch (currentState) {
-    case GameState::WAITING:
+    switch (Game::getGameState()) {
+    case Game::GameState::WAITING:
       break;
-    case GameState::PLAYING:
-      gameScreen.update(currentState);
+    case Game::GameState::PLAYING:
+      gameScreen.update(player);
       break;
-    case GameState::GAME_OVER: { // Update game over screen if it just changed
+    case Game::GameState::GAME_OVER: { // Update game over screen if it just
+                                       // changed
 
-      if (gameOverScreen.finalScore != gameScreen.score) {
-        gameOverScreen.finalScore = gameScreen.score;
-      }
+      // if (gameOverScreen.finalScore != player.getScore()) {
+      //         << " to " << player.getScore() << std::endl;
+      // std::endl; gameOverScreen.finalScore = player.getScore();
+      //}
+      gameOverScreen.update(player);
       break;
     }
-    case GameState::TESTING:
+    case Game::GameState::TESTING:
       break;
     }
 
     // Render based on current state
     window.clear();
-    switch (currentState) {
-    case GameState::WAITING:
+    switch (Game::getGameState()) {
+    case Game::GameState::WAITING:
       introScreen.draw(window, font);
       break;
-    case GameState::PLAYING:
-      gameScreen.draw(window, font, heartTexture);
+    case Game::GameState::PLAYING:
+      gameScreen.draw(window, font, heartTexture, player);
       break;
-    case GameState::GAME_OVER: {
+    case Game::GameState::GAME_OVER: {
       gameOverScreen.draw(window, font);
       break;
     }
-    case GameState::TESTING:
+    case Game::GameState::TESTING:
       testingScreen.draw(window, font);
       break;
     }

@@ -1,19 +1,21 @@
 #pragma once
+#include "effects.h"
 #include "enemy.h"
-#include "models.h"
+#include "screen.h"
 #include <SFML/Graphics/Font.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 #include <string>
 
-class TestingScreen {
+class TestingScreen : public smashers::Widget {
 public:
   TestingScreen(std::string path);
-  void handleEvent(const sf::Event &, sf::RenderWindow &, GameState &);
+  void handleEvent(const sf::Event &, sf::RenderWindow &);
   void draw(sf::RenderWindow &window, sf::Font &font);
+  void update();
 
 private:
-  Enemy enemy;
+  smashers::Effects effect;
   sf::Clock clock;
 };

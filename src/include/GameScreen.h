@@ -1,7 +1,11 @@
 #pragma once
 
+#include "effects.h"
 #include "enemy.h"
+#include "gameStateManager.h"
 #include "models.h"
+#include "player.h"
+#include "saveData.h"
 #include "screen.h"
 #include "sounds.h"
 #include <SFML/Audio.hpp>
@@ -12,20 +16,8 @@
 #include <iostream>
 #include <unordered_map>
 
-class GameScreen {
-private:
-  uint windowWidth, windowHeight;
-  Enemy enemy;
-  sf::Clock enemyClock;
-  void
-  handleMouseButtonPressed(const sf::Event::MouseButtonPressed &mouseButton,
-                           sf::RenderWindow &window, GameState &gameState);
-  void handleKeyPressed(const sf::Event::KeyPressed &keyPressed,
-                        GameState &gameState);
-
+class GameScreen : public smashers::Widget {
 public:
-  uint score;
-  uint lives;
   uint consecutiveMisses;
 
   sf::Clock clock;
@@ -34,16 +26,29 @@ public:
   std::unordered_map<SoundId, sf::Sound> &sounds;
 
   // Constructor
-  GameScreen(uint width, uint height, Enemy &enm,
-             std::unordered_map<SoundId, sf::Sound> &sounds);
+  GameScreen(uint width, uint height, Enemy &enm, smashers::Effects &explosion,
+             std::unordered_map<SoundId, sf::Sound> &sounds,
+             TOMLDataSaver &saver);
 
   // Methods
-  void update(GameState &);
-  void draw(sf::RenderWindow &);
+  void draw(sf::RenderWindow &, sf::Font &);
+  void update(smashers::Player &player);
+  void draw(sf::RenderWindow &window, sf::Font &font, sf::Texture &heartTexture,
+            smashers::Player &player);
   void handleEvent(const sf::Event &event, sf::RenderWindow &window,
-                   GameState &gameState);
+                   smashers::Player &player);
 
-  void draw(sf::RenderWindow &window, sf::Font &font,
-            sf::Texture &heartTexture);
   void reset();
+
+private:
+  uint windowWidth, windowHeight;
+  Enemy enemy;
+  smashers::Effects eff;
+  sf::Clock enemyClock;
+  TOMLDataSaver scoreSaver;
+  void
+  handleMouseButtonPressed(const sf::Event::MouseButtonPressed &mouseButton,
+                           sf::RenderWindow &window, smashers::Player &player);
+  void handleKeyPressed(const sf::Event::KeyPressed &keyPressed,
+                        smashers::Player &player);
 };

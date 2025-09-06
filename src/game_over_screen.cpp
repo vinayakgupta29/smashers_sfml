@@ -1,27 +1,25 @@
-
 #include "include/GameOverScreen.h"
-#include "include/GameScreen.h"
-#include "include/models.h"
+#include "include/gameStateManager.h"
+#include "include/player.h"
 #include <SFML/Graphics.hpp>
+#include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window.hpp>
+#include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <sys/types.h>
 
 GameOverScreen::GameOverScreen(uint score) : finalScore(score) {}
 
-void GameOverScreen::handleEvent(const sf::Event &event, GameState &gameState,
-                                 GameScreen &gameScreen) {
+void GameOverScreen::handleEvent(const sf::Event &event,
+                                 sf::RenderWindow &window) {}
+void GameOverScreen::handleEvent(const sf::Event &event,
+                                 smashers::Player &player) {
   if (const auto *mouseButtonPressed =
           event.getIf<sf::Event::MouseButtonPressed>()) {
     if (mouseButtonPressed->button == sf::Mouse::Button::Left) {
       // Reset game and go back to playing
-      gameScreen.score = 0;
-      gameScreen.lives = 5;
-      gameScreen.consecutiveMisses = 0;
-      gameScreen.isDotClicked = false;
-      gameScreen.interval = sf::milliseconds(2000);
-      gameScreen.clock.restart();
-      gameState = GameState::PLAYING;
+      player.setScore(0);
+      player.setHealth(5);
+      Game::setGameState(Game::GameState::PLAYING);
     }
   }
 
@@ -29,18 +27,19 @@ void GameOverScreen::handleEvent(const sf::Event &event, GameState &gameState,
     if (keyPressed->code == sf::Keyboard::Key::Space ||
         keyPressed->code == sf::Keyboard::Key::Enter) {
       // Reset game and go back to playing
-      gameScreen.score = 0;
-      gameScreen.lives = 5;
-      gameScreen.consecutiveMisses = 0;
-      gameScreen.isDotClicked = false;
-      gameScreen.interval = sf::milliseconds(2000);
-      gameScreen.clock.restart();
-      gameState = GameState::PLAYING;
+      player.setScore(0);
+      player.setHealth(5);
+      Game::setGameState(Game::GameState::PLAYING);
     }
     if (keyPressed->code == sf::Keyboard::Key::Escape) {
-      gameState = GameState::WAITING;
+      Game::setGameState(Game::GameState::WAITING);
     }
   }
+}
+
+void GameOverScreen::update(smashers::Player &player) {
+
+  finalScore = player.getScore();
 }
 
 void GameOverScreen::draw(sf::RenderWindow &window, sf::Font &font) {
@@ -60,6 +59,7 @@ void GameOverScreen::draw(sf::RenderWindow &window, sf::Font &font) {
                             (windowHeight - gameOverBounds.size.y) / 2 - 80});
 
   // Final score text
+
   sf::Text finalScoreText(font);
   finalScoreText.setString("Final Score: " + std::to_string(finalScore));
   finalScoreText.setCharacterSize(30);

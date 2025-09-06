@@ -1,51 +1,57 @@
 
 #include "include/GameScreen.h"
+#include "include/effects.h"
 #include "include/enemy.h"
-#include "include/models.h"
+#include "include/gameStateManager.h"
+#include "include/player.h"
+#include "include/saveData.h"
 #include "include/sounds.h"
+#include "include/utils.h"
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
 GameScreen::GameScreen(uint width, uint height, Enemy &enm,
-                       std::unordered_map<SoundId, sf::Sound> &sound)
-    : score(0), lives(5), consecutiveMisses(0), isDotClicked(false),
-      windowWidth(width), windowHeight(height), enemy(enm), sounds(sound) {
-
+                       smashers::Effects &explosion,
+                       std::unordered_map<SoundId, sf::Sound> &sound,
+                       TOMLDataSaver &saver)
+    : consecutiveMisses(0), isDotClicked(false), windowWidth(width),
+      windowHeight(height), enemy(enm), eff(explosion), sounds(sound),
+      scoreSaver(saver) {
+  eff.setPosition(-1000, -1000);
   interval = sf::milliseconds(2000);
 }
 
 void GameScreen::handleEvent(const sf::Event &event, sf::RenderWindow &window,
-                             GameState &gameState) {
+                             smashers::Player &player) {
 
   if (const auto *mouseButtonPressed =
           event.getIf<sf::Event::MouseButtonPressed>()) {
-    handleMouseButtonPressed(*mouseButtonPressed, window, gameState);
+    handleMouseButtonPressed(*mouseButtonPressed, window, player);
   }
   if (const auto *keyPressed = event.getIf<sf::Event::KeyPressed>()) {
-    if (keyPressed->code == sf::Keyboard::Key::Escape) {
-      handleKeyPressed(*keyPressed, gameState);
-    }
+    handleKeyPressed(*keyPressed, player);
   }
 }
 
 void GameScreen::handleMouseButtonPressed(
     const sf::Event::MouseButtonPressed &mouseButton, sf::RenderWindow &window,
-    GameState &gameState) {
+    smashers::Player &player) {
   if (mouseButton.button == sf::Mouse::Button::Left) {
     sf::Vector2f click_pos = window.mapPixelToCoords(mouseButton.position);
     if (isClickedOn(enemy, click_pos)) {
-      score++;
+      player.incrementScore();
+
       auto it = sounds.find(SoundId::ATTACK);
       if (it != sounds.end())
         it->second.play();
       isDotClicked = true;
       consecutiveMisses = 0;
-
       // Spawn new dot (avoid title bar area)
       float titleBarHeight = 80.f; // Approximate title bar height
       sf::Vector2f pos(
@@ -56,13 +62,12 @@ void GameScreen::handleMouseButtonPressed(
                      static_cast<float>(windowHeight -
                                         enemy.getGlobalBounds().size.y * 2))});
       enemy.setPosition(pos.x, pos.y);
-      std::cout << "Score : " << score << "\n";
+      eff.setPosition(click_pos.x, click_pos.y);
+      eff.play();
 
-      if (score % 100 == 0) {
+      if (player.getScore() % 100 == 0) {
         interval =
             sf::milliseconds(static_cast<int>(interval.asMilliseconds() * 0.9));
-        std::cout << "Interval reduced to: " << interval.asMilliseconds()
-                  << " ms\n";
       }
       clock.restart(); // Reset the interval clock on click as well
     }
@@ -70,16 +75,22 @@ void GameScreen::handleMouseButtonPressed(
 }
 
 void GameScreen::handleKeyPressed(const sf::Event::KeyPressed &keyPressed,
-                                  GameState &gameState) {
+                                  smashers::Player &player) {
   if (keyPressed.code == sf::Keyboard::Key::Escape) {
-    gameState = GameState::WAITING;
-    update(gameState);
+    Game::setGameState(Game::GameState::WAITING);
+
+    bool h = scoreSaver.updateHighScore(player.getScore());
+    if (h) {
+      player.reset();
+    }
+    update(player);
   }
 }
 
-void GameScreen::update(GameState &gameState) {
+void GameScreen::update(smashers::Player &player) {
   // Update phase
   enemy.animate();
+  eff.animate();
   if (clock.getElapsedTime() > interval) {
     // Check if dot was missed
     if (!isDotClicked) {
@@ -87,16 +98,19 @@ void GameScreen::update(GameState &gameState) {
       std::cout << "Consecutive misses: " << consecutiveMisses << "\n";
 
       // Lose a heart after 2 consecutive misses
-      if (consecutiveMisses >= 2) {
-        lives--;
+      if (consecutiveMisses >= 2 && player.getHealth() > 0) {
+        player.decrementHealth();
         auto it = sounds.find(SoundId::HEALTH_LOSS);
         if (it != sounds.end())
           it->second.play();
-        std::cout << "Lost a heart! Lives remaining: " << lives << "\n";
+        std::cout << "Lost a heart! Lives remaining: " << player.getHealth()
+                  << "\n";
 
         // Check for game over
-        if (lives == 0) {
-          gameState = GameState::GAME_OVER;
+        if (player.getHealth() == 0) {
+          Game::setGameState(Game::GameState::GAME_OVER);
+
+          bool h = scoreSaver.updateHighScore(player.getScore());
           return;
         }
       }
@@ -104,7 +118,6 @@ void GameScreen::update(GameState &gameState) {
 
     // Reset for next round and spawn new dot
     isDotClicked = false;
-
     // Spawn new dot (avoid title bar area)
     float titleBarHeight = 80.f; // Approximate title bar height
     sf::Vector2f pos(
@@ -121,10 +134,10 @@ void GameScreen::update(GameState &gameState) {
 }
 
 void GameScreen::draw(sf::RenderWindow &window, sf::Font &font,
-                      sf::Texture &heartTexture) {
+                      sf::Texture &heartTexture, smashers::Player &player) {
   // Score text
   sf::Text text(font);
-  text.setString("Score: " + std::to_string(score));
+  text.setString("Score: " + std::to_string(player.getScore()));
   text.setCharacterSize(40);
   text.setFillColor(sf::Color::White);
   text.setStyle(sf::Text::Bold);
@@ -147,16 +160,18 @@ void GameScreen::draw(sf::RenderWindow &window, sf::Font &font,
         {heartsStartX + i * (heartRadius * 2 + heartSpacing), heartsY});
 
     // Show full hearts for current lives, faded for lost lives
-    if (i < lives) {
+    if (i < player.getHealth()) {
       heart.setColor(sf::Color::Red);
     } else {
       heart.setColor(sf::Color(100, 100, 100, 100));
     }
     hearts.push_back(heart);
   }
-  enemy.draw(window);
+
+  // enemy.draw(window);
   // Draw everything
   window.draw(enemy.getSprite());
+  eff.draw(window);
   window.draw(text);
   for (const auto &heart : hearts) {
     window.draw(heart);
